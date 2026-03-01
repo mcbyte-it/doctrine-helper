@@ -6,6 +6,13 @@ use Doctrine\DBAL\Connection;
 
 abstract class Driver
 {
+    private const PHP_RESERVED = [
+        'class', 'interface', 'trait', 'enum', 'abstract', 'final',
+        'extends', 'implements', 'namespace', 'use', 'function', 'return',
+        'echo', 'print', 'list', 'array', 'object', 'string', 'int', 'float',
+        'bool', 'null', 'true', 'false', 'match', 'fn', 'static', 'self',
+    ];
+
     public string $tableName = '';
     public array $tableInfo = [];
     public string $entityName = "";
@@ -183,7 +190,7 @@ EOF;
         if (!empty($this->withoutTablePrefix) && str_starts_with($this->tableName, $this->withoutTablePrefix)) {
             $tableName = substr($tableName, strlen($this->withoutTablePrefix));
         }
-        $entityName = $this->upperName($tableName);
+        $entityName = $this->entityNameFromTable($tableName);
         $this->entityName = $entityName;
         $fileName = $this->entityName . ".php";
         $filePath = $this->entityDir . $fileName;
@@ -217,6 +224,46 @@ EOF;
     public function upperName(string $name): string
     {
         return str_replace("_", "", ucwords(strtolower($name), '_'));
+    }
+
+    public function entityNameFromTable(string $tableName): string
+    {
+        $entityName = $this->upperName($tableName);
+        if ($this->isPhpReserved($entityName)) {
+            return $entityName;
+        }
+
+        $singularEntityName = $this->singularize($entityName);
+        if ($this->isPhpReserved($singularEntityName)) {
+            return $entityName;
+        }
+
+        return $singularEntityName;
+    }
+
+    public function singularize(string $name): string
+    {
+        if (str_ends_with($name, 'ies') && strlen($name) > 3) {
+            return substr($name, 0, -3) . 'y';
+        }
+        if (str_ends_with($name, 'ses') && strlen($name) > 3) {
+            return substr($name, 0, -2);
+        }
+        if (str_ends_with($name, 's') && !str_ends_with($name, 'ss') && strlen($name) > 1) {
+            return substr($name, 0, -1);
+        }
+
+        return $name;
+    }
+
+    public function isPhpReserved(string $name): bool
+    {
+        return in_array(strtolower($name), self::PHP_RESERVED, true);
+    }
+
+    public function propertyName(string $columnName): string
+    {
+        return $this->upper($columnName);
     }
 
     public function upper(string $name): string
