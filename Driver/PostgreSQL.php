@@ -64,10 +64,11 @@ EOF;
             if ($item['Non_unique'] == '0') {
                 $class = "ORM\UniqueConstraint";
             }
-            $columns = implode(', ', array_map(function ($v) {
-                return "'{$v}'";
+            $fields = implode(', ', array_map(function ($v) {
+                $fieldName = $this->propertyName($v);
+                return "'{$fieldName}'";
             }, $item['Column_name']));
-            $tmp = "#[{$class}(name: '{$key}', columns: [{$columns}])]";
+            $tmp = "#[{$class}(name: '{$key}', fields: [{$fields}])]";
             $indexes[] = $tmp;
         }
         return PHP_EOL . implode(PHP_EOL, $indexes);
@@ -164,10 +165,7 @@ EOF;
         array_push($this->tableInfo, ...$primaryArray, ...$othersArray);
         foreach ($this->tableInfo as $item) {
             $type = $item['data_type'];
-            $columnName = $item['column_name'];
-            if ($this->ucfirst === 'true') {
-                $columnName = $this->upper($columnName);
-            }
+            $columnName = $this->propertyName($item['column_name']);
             $isNullable = $item['is_nullable'];
             $columnDefault = $item['column_default'];
             $characterMaximumLength = $item['character_maximum_length'];
