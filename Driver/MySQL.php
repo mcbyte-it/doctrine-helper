@@ -42,10 +42,11 @@ class MySQL extends Driver
             if ($item['Non_unique'] == '0') {
                 $class = "ORM\UniqueConstraint";
             }
-            $columns = implode(', ', array_map(function ($v) {
-                return "'{$v}'";
+            $fields = implode(', ', array_map(function ($v) {
+                $fieldName = $this->propertyName($v);
+                return "'{$fieldName}'";
             }, $item['Column_name']));
-            $tmp = "#[{$class}(name: '{$key}', columns: [{$columns}])]";
+            $tmp = "#[{$class}(name: '{$key}', fields: [{$fields}])]";
             $indexes[] = $tmp;
         }
         return PHP_EOL . implode(PHP_EOL, $indexes);
@@ -65,10 +66,7 @@ class MySQL extends Driver
         array_push($this->tableInfo, ...$primaryArray, ...$othersArray);
         foreach ($this->tableInfo as $item) {
             $type = $item['DATA_TYPE'];
-            $columnName = $item['COLUMN_NAME'];
-            if ($this->ucfirst === 'true') {
-                $columnName = $this->upper($columnName);
-            }
+            $columnName = $this->propertyName($item['COLUMN_NAME']);
             $isNullable = $item['IS_NULLABLE'];
             $columnDefault = $item['COLUMN_DEFAULT'];
             $characterMaximumLength = $item['CHARACTER_MAXIMUM_LENGTH'];
